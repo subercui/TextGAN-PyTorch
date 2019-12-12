@@ -4,13 +4,14 @@
 # @FileName     : run_relgan.py
 # @Time         : Created at 2019-05-28
 # @Blog         : http://zhiweil.ml/
-# @Description  : 
+# @Description  :
 # Copyrights (C) 2018. All Rights Reserved.
 
 import sys
 from subprocess import call
 
 import os
+from os.path import dirname
 
 # Job id and gpu_id
 if len(sys.argv) > 2:
@@ -24,7 +25,8 @@ elif len(sys.argv) > 1:
 else:
     job_id = 0
     gpu_id = 0
-    print('Missing argument: job_id and gpu_id. Use default job_id: {}, gpu_id: {}'.format(job_id, gpu_id))
+    print('Missing argument: job_id and gpu_id. Use default job_id: {}, gpu_id: {}'.format(
+        job_id, gpu_id))
 
 # Executables
 executable = 'python'
@@ -77,7 +79,7 @@ dis_hidden_dim = 64
 num_rep = 64
 
 # =====Run=====
-rootdir = '../'
+rootdir = dirname(dirname(os.path.abspath(__file__)))
 scriptname = 'main.py'
 cwd = os.path.dirname(os.path.abspath(__file__))
 
