@@ -33,7 +33,8 @@ def program_config(parser):
     parser.add_argument('--samples_num', default=cfg.samples_num, type=int)
     parser.add_argument('--vocab_size', default=cfg.vocab_size, type=int)
     parser.add_argument('--mle_epoch', default=cfg.MLE_train_epoch, type=int)
-    parser.add_argument('--clas_pre_epoch', default=cfg.PRE_clas_epoch, type=int)
+    parser.add_argument('--clas_pre_epoch',
+                        default=cfg.PRE_clas_epoch, type=int)
     parser.add_argument('--adv_epoch', default=cfg.ADV_train_epoch, type=int)
     parser.add_argument('--inter_epoch', default=cfg.inter_epoch, type=int)
     parser.add_argument('--batch_size', default=cfg.batch_size, type=int)
@@ -50,7 +51,8 @@ def program_config(parser):
     parser.add_argument('--test_data', default=cfg.test_data, type=str)
     parser.add_argument('--temp_adpt', default=cfg.temp_adpt, type=str)
     parser.add_argument('--temperature', default=cfg.temperature, type=int)
-    parser.add_argument('--ora_pretrain', default=cfg.oracle_pretrain, type=int)
+    parser.add_argument(
+        '--ora_pretrain', default=cfg.oracle_pretrain, type=int)
     parser.add_argument('--gen_pretrain', default=cfg.gen_pretrain, type=int)
     parser.add_argument('--dis_pretrain', default=cfg.dis_pretrain, type=int)
 
@@ -58,7 +60,8 @@ def program_config(parser):
     parser.add_argument('--adv_g_step', default=cfg.ADV_g_step, type=int)
     parser.add_argument('--rollout_num', default=cfg.rollout_num, type=int)
     parser.add_argument('--gen_embed_dim', default=cfg.gen_embed_dim, type=int)
-    parser.add_argument('--gen_hidden_dim', default=cfg.gen_hidden_dim, type=int)
+    parser.add_argument('--gen_hidden_dim',
+                        default=cfg.gen_hidden_dim, type=int)
     parser.add_argument('--goal_size', default=cfg.goal_size, type=int)
     parser.add_argument('--step_size', default=cfg.step_size, type=int)
     parser.add_argument('--mem_slots', default=cfg.mem_slots, type=int)
@@ -71,11 +74,13 @@ def program_config(parser):
     parser.add_argument('--adv_d_step', default=cfg.ADV_d_step, type=int)
     parser.add_argument('--adv_d_epoch', default=cfg.ADV_d_epoch, type=int)
     parser.add_argument('--dis_embed_dim', default=cfg.dis_embed_dim, type=int)
-    parser.add_argument('--dis_hidden_dim', default=cfg.dis_hidden_dim, type=int)
+    parser.add_argument('--dis_hidden_dim',
+                        default=cfg.dis_hidden_dim, type=int)
     parser.add_argument('--num_rep', default=cfg.num_rep, type=int)
 
     # Metrics
-    parser.add_argument('--use_nll_oracle', default=cfg.use_nll_oracle, type=int)
+    parser.add_argument('--use_nll_oracle',
+                        default=cfg.use_nll_oracle, type=int)
     parser.add_argument('--use_nll_gen', default=cfg.use_nll_gen, type=int)
     parser.add_argument('--use_nll_div', default=cfg.use_nll_div, type=int)
     parser.add_argument('--use_bleu', default=cfg.use_bleu, type=int)
@@ -100,8 +105,10 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     if opt.if_real_data:
-        opt.max_seq_len, opt.vocab_size = text_process('dataset/' + opt.dataset + '.txt')
-        cfg.extend_vocab_size = len(load_test_dict(opt.dataset)[0])  # init classifier vocab_size
+        opt.max_seq_len, opt.vocab_size = text_process(
+            'dataset/' + opt.dataset + '.txt')
+        cfg.extend_vocab_size = len(load_test_dict(opt.dataset)[
+                                    0])  # init classifier vocab_size
     cfg.init_param(opt)
     opt.save_root = cfg.save_root
 
