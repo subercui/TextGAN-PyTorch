@@ -4,7 +4,7 @@
 # @FileName     : visualization.py
 # @Time         : Created at 2019-03-19
 # @Blog         : http://zhiweil.ml/
-# @Description  : 
+# @Description  :
 # Copyrights (C) 2018. All Rights Reserved.
 
 import matplotlib.pyplot as plt
@@ -22,7 +22,8 @@ title_dict = {
     'BLEU-3': 'BLEU-3',
 }
 
-color_list = ['#e74c3c', '#e67e22', '#f1c40f', '#8e44ad', '#2980b9', '#27ae60', '#16a085']
+color_list = ['#e74c3c', '#e67e22', '#f1c40f',
+              '#8e44ad', '#2980b9', '#27ae60', '#16a085']
 
 
 def plt_data(data, step, title, c_id, savefig=False):
@@ -44,7 +45,8 @@ def get_log_data(filename):
             try:
                 for key in data_dict.keys():
                     if key in items:
-                        data_dict[key].append(float(items[items.index(key) + 2][:-1]))
+                        data_dict[key].append(
+                            float(items[items.index(key) + 2][:-1]))
             except:
                 break
 
@@ -54,12 +56,13 @@ def get_log_data(filename):
 if __name__ == '__main__':
     log_file_root = '../log/'
     # Custom your log files in lists, no more than len(color_list)
-    log_file_list = ['log_1129_0647_48']
-    legend_text = ['RelGAN']
+    log_file_list = ['log_1129_0853_28']
+    legend_text = ['RelGAN_coco']
 
     color_id = 0
-    data_name = 'oracle_NLL'
+    # data_name = 'oracle_NLL'
     # data_name = 'gen_NLL'
+    data_name = 'BLEU-3'
     if_save = True
     # legend_text = log_file_list
 
@@ -77,5 +80,5 @@ if __name__ == '__main__':
         color_id += 1
 
     plt.legend()
-    plt.savefig('../savefig/' + legend_text[-1] + data_name + '.png')
+    plt.savefig('../savefig/' + '-'.join(log_file_list) + data_name + '.png')
     plt.show()

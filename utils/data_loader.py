@@ -4,7 +4,7 @@
 # @FileName     : data_loader.py
 # @Time         : Created at 2019-05-31
 # @Blog         : http://zhiweil.ml/
-# @Description  : 
+# @Description  :
 # Copyrights (C) 2018. All Rights Reserved.
 
 import random
@@ -33,7 +33,8 @@ class GenDataIter:
         if cfg.if_real_data:
             self.word2idx_dict, self.idx2word_dict = load_dict(cfg.dataset)
         if if_test_data:  # used for the classifier
-            self.word2idx_dict, self.idx2word_dict = load_test_dict(cfg.dataset)
+            self.word2idx_dict, self.idx2word_dict = load_test_dict(
+                cfg.dataset)
 
         self.loader = DataLoader(
             dataset=GANDataset(self.__read_data__(samples)),
@@ -51,10 +52,12 @@ class GenDataIter:
         # global all_data
         if isinstance(samples, torch.Tensor):  # Tensor
             inp, target = self.prepare(samples)
-            all_data = [{'input': i, 'target': t} for (i, t) in zip(inp, target)]
+            all_data = [{'input': i, 'target': t}
+                        for (i, t) in zip(inp, target)]
         elif isinstance(samples, str):  # filename
             inp, target = self.load_data(samples)
-            all_data = [{'input': i, 'target': t} for (i, t) in zip(inp, target)]
+            all_data = [{'input': i, 'target': t}
+                        for (i, t) in zip(inp, target)]
         else:
             all_data = None
         return all_data
@@ -113,7 +116,8 @@ class DisDataIter:
 
     def prepare(self, pos_samples, neg_samples, gpu=False):
         """Build inp and target"""
-        inp = torch.cat((pos_samples, neg_samples), dim=0).long().detach()  # !!!need .detach()
+        inp = torch.cat((pos_samples, neg_samples),
+                        dim=0).long().detach()  # !!!need .detach()
         target = torch.ones(inp.size(0)).long()
         target[pos_samples.size(0):] = 0
 
