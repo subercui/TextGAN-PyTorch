@@ -4,7 +4,7 @@
 # @FileName     : text_process.py
 # @Time         : Created at 2019-05-14
 # @Blog         : http://zhiweil.ml/
-# @Description  : 
+# @Description  :
 # Copyrights (C) 2018. All Rights Reserved.
 
 import nltk
@@ -20,6 +20,7 @@ def get_tokenlized(file):
     tokenlized = list()
     with open(file) as raw:
         for text in raw:
+            # thansfer to a list of words
             text = nltk.word_tokenize(text.lower())
             tokenlized.append(text)
     return tokenlized
@@ -65,7 +66,8 @@ def text_process(train_text_loc, test_text_loc=None):
     if test_text_loc is None:
         sequence_len = len(max(train_tokens, key=len))
     else:
-        sequence_len = max(len(max(train_tokens, key=len)), len(max(test_tokens, key=len)))
+        sequence_len = max(len(max(train_tokens, key=len)),
+                           len(max(test_tokens, key=len)))
 
     return sequence_len, len(word2idx_dict)
 
@@ -93,7 +95,8 @@ def load_dict(dataset):
     iw_path = 'dataset/{}_iw_dict.txt'.format(dataset)
     wi_path = 'dataset/{}_wi_dict.txt'.format(dataset)
 
-    if not os.path.exists(iw_path) or not os.path.exists(iw_path):  # initialize dictionaries
+    # initialize dictionaries
+    if not os.path.exists(iw_path) or not os.path.exists(iw_path):
         init_dict(dataset)
 
     with open(iw_path, 'r') as dictin:
@@ -210,8 +213,10 @@ def process_cat_text():
 
     f_pos_train = open('dataset/{}{}_cat1.txt'.format(dataset, seq_len), 'w')
     f_neg_train = open('dataset/{}{}_cat0.txt'.format(dataset, seq_len), 'w')
-    f_pos_test = open('dataset/testdata/{}{}_cat1_test.txt'.format(dataset, seq_len), 'w')
-    f_neg_test = open('dataset/testdata/{}{}_cat0_test.txt'.format(dataset, seq_len), 'w')
+    f_pos_test = open(
+        'dataset/testdata/{}{}_cat1_test.txt'.format(dataset, seq_len), 'w')
+    f_neg_test = open(
+        'dataset/testdata/{}{}_cat0_test.txt'.format(dataset, seq_len), 'w')
 
     for p_s in pos_sent[:pos_len]:
         f_pos_test.write(p_s)
@@ -259,7 +264,8 @@ def combine_amazon_text():
 def extend_clas_train_data():
     data_name = 'mr'
     dataset = 'mr20'
-    neg_filter_file = 'dataset/{}/{}_cat0.txt'.format(data_name, dataset)  # include train and test for generator
+    # include train and test for generator
+    neg_filter_file = 'dataset/{}/{}_cat0.txt'.format(data_name, dataset)
     pos_filter_file = 'dataset/{}/{}_cat1.txt'.format(data_name, dataset)
     neg_test_file = 'dataset/testdata/{}_cat0_test.txt'.format(dataset)
     pos_test_file = 'dataset/testdata/{}_cat1_test.txt'.format(dataset)
@@ -313,10 +319,12 @@ def load_word_vec(path, word2idx_dict=None, type='glove'):
         for line in fin:
             tokens = line.rstrip().split()
             if word2idx_dict is None or tokens[0] in word2idx_dict.keys():
-                word2vec_dict[tokens[0]] = np.asarray(tokens[1:], dtype='float32')
+                word2vec_dict[tokens[0]] = np.asarray(
+                    tokens[1:], dtype='float32')
     elif type == 'word2vec':
         import gensim
-        word2vec_dict = gensim.models.KeyedVectors.load_word2vec_format(path, binary=True)
+        word2vec_dict = gensim.models.KeyedVectors.load_word2vec_format(
+            path, binary=True)
     else:
         raise NotImplementedError('No such type: %s' % type)
     return word2vec_dict
@@ -331,10 +339,12 @@ def build_embedding_matrix(dataset):
     else:
         print('Loading Glove word vectors...')
         word2idx_dict, _ = load_dict(dataset)
-        embedding_matrix = np.random.random((len(word2idx_dict) + 2, 300))  # 2 for padding token and start token
+        # 2 for padding token and start token
+        embedding_matrix = np.random.random((len(word2idx_dict) + 2, 300))
         fname = '../glove.42B.300d.txt'  # Glove file
         # fname = '../GoogleNews-vectors-negative300.bin' # Google Word2Vec file
-        word2vec_dict = load_word_vec(fname, word2idx_dict=word2idx_dict, type='glove')
+        word2vec_dict = load_word_vec(
+            fname, word2idx_dict=word2idx_dict, type='glove')
         print('Building embedding matrix:', embed_filename)
         for word, i in word2idx_dict.items():
             if word in word2vec_dict:
