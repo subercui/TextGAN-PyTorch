@@ -67,7 +67,7 @@ gen_lr = 0.01
 gen_adv_lr = 1e-4
 dis_lr = 1e-4
 pre_log_step = 10
-adv_log_step = 20
+adv_log_step = 50
 
 # ===Generator===
 ADV_g_step = 1
