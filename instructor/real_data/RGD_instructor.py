@@ -110,19 +110,20 @@ class RGDInstructor(BasicInstructor):
         for step in range(g_step):
             # shape in (64, 37) index vectors
             real_samples = self.train_data.random_batch()['target']
-            # (64, max_len)
-            real_struc_t, real_struc_d = self.read(real_samples)
             # but gen_samle is shape in (64, 37, 4683)
             gen_samples = self.gen.sample(
                 cfg.batch_size, cfg.batch_size, one_hot=True)
-            gen_stuc_t, gen_stuc_d = self.read(gen_samples)
+            # (64, max_len)
+            with torch.no_grad():
+                real_struc_t, real_struc_d = self.read(real_samples)
+                gen_struc_t, gen_struc_d = self.read(gen_samples)
             if cfg.CUDA:
                 real_samples, gen_samples = real_samples.cuda(), gen_samples.cuda()
                 real_struc_t, real_struc_d = real_struc_t.cuda(), real_struc_d.cuda()
-                gen_stuc_t, gen_stuc_d = gen_stuc_t.cuda(), gen_stuc_d.cuda()
+                gen_struc_t, gen_struc_d = gen_struc_t.cuda(), gen_struc_d.cuda()
             real_samples = F.one_hot(real_samples, cfg.vocab_size).float()
             real_struc_t = F.one_hot(real_struc_t, cfg.vocab_size).float()
-            gen_stuc_t = F.one_hot(gen_stuc_t, cfg.vocab_size).float()
+            gen_struc_t = F.one_hot(gen_struc_t, cfg.vocab_size).float()
             real_struc_d = F.one_hot(real_struc_d, cfg.dep_vocab_size).float()
             gen_struc_d = F.one_hot(gen_struc_d, cfg.dep_vocab_size).float()
 
@@ -140,17 +141,18 @@ class RGDInstructor(BasicInstructor):
         total_loss = 0
         for step in range(d_step):
             real_samples = self.train_data.random_batch()['target']
-            real_struc_t, real_struc_d = self.read(real_samples)
             gen_samples = self.gen.sample(
                 cfg.batch_size, cfg.batch_size, one_hot=True)
-            gen_stuc_t, gen_stuc_d = self.read(gen_samples)
+            with torch.no_grad():
+                real_struc_t, real_struc_d = self.read(real_samples)
+                gen_struc_t, gen_struc_d = self.read(gen_samples)
             if cfg.CUDA:
                 real_samples, gen_samples = real_samples.cuda(), gen_samples.cuda()
                 real_struc_t, real_struc_d = real_struc_t.cuda(), real_struc_d.cuda()
-                gen_stuc_t, gen_stuc_d = gen_stuc_t.cuda(), gen_stuc_d.cuda()
+                gen_struc_t, gen_struc_d = gen_struc_t.cuda(), gen_struc_d.cuda()
             real_samples = F.one_hot(real_samples, cfg.vocab_size).float()
             real_struc_t = F.one_hot(real_struc_t, cfg.vocab_size).float()
-            gen_stuc_t = F.one_hot(gen_stuc_t, cfg.vocab_size).float()
+            gen_struc_t = F.one_hot(gen_struc_t, cfg.vocab_size).float()
             real_struc_d = F.one_hot(real_struc_d, cfg.dep_vocab_size).float()
             gen_struc_d = F.one_hot(gen_struc_d, cfg.dep_vocab_size).float()
 

@@ -40,7 +40,7 @@ CUDA = int(True)
 oracle_pretrain = int(True)
 gen_pretrain = int(False)
 dis_pretrain = int(False)
-MLE_train_epoch = 150
+MLE_train_epoch = [150, 150, 150, 60]  # 150
 ADV_train_epoch = 3000
 tips = 'RGD experiments'
 
@@ -100,7 +100,7 @@ args = [
     '--ora_pretrain', oracle_pretrain,
     '--gen_pretrain', gen_pretrain,
     '--dis_pretrain', dis_pretrain,
-    '--mle_epoch', MLE_train_epoch,
+    '--mle_epoch', MLE_train_epoch[job_id],
     '--adv_epoch', ADV_train_epoch,
     '--tips', tips,
 

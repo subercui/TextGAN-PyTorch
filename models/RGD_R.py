@@ -34,12 +34,12 @@ class RGD_R(object):
         for token in doc:
             if token.dep_ == 'ROOT':
                 text_pile.append(token.text)
-                dep_pile.append(token.dep_)
+                dep_pile.append(token.dep_.lower())
                 for child in token.children:
                     if child.dep_ == 'punct':
                         continue
                     text_pile.append(child.text)
-                    dep_pile.append(child.dep_)
+                    dep_pile.append(child.dep_.lower())
 
         # here the two piles are list of real Texts
         # convert to index vectors now, and later in the instructor will convert to one hot vectors
@@ -96,7 +96,7 @@ class RGD_R(object):
             # a list of (one hot) arrays
             # shape should be like (64, 20 length, 5000 vocabs)
             # and this should be applied in the gen_samples scenario
-            samples = inp.max(2)
+            samples = inp.argmax(2)
             sample_words = tensor_to_tokens(samples, self.idx2word_dict)
             sentences = [' '.join(sent) for sent in sample_words]
             return sentences

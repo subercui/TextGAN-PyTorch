@@ -67,15 +67,16 @@ class BasicInstructor:
         self.clas_opt = None
 
         # Metrics
-        self.bleu = BLEU('BLEU', gram=[2, 3, 4, 5], if_use=cfg.use_bleu)
+        self.bleu = BLEU('BLEU', gram=[2, 3], if_use=cfg.use_bleu)
         self.nll_gen = NLL('NLL_gen', if_use=cfg.use_nll_gen, gpu=cfg.CUDA)
-        self.nll_div = NLL('NLL_div', if_use=cfg.use_nll_div, gpu=cfg.CUDA)
-        self.self_bleu = BLEU('Self-BLEU', gram=3, if_use=cfg.use_self_bleu)
-        self.clas_acc = ACC(if_use=cfg.use_clas_acc)
-        self.ppl = PPL(self.train_data, self.test_data,
-                       n_gram=5, if_use=cfg.use_ppl)
-        self.all_metrics = [self.bleu, self.nll_gen,
-                            self.nll_div, self.self_bleu, self.ppl]
+        # self.nll_div = NLL('NLL_div', if_use=cfg.use_nll_div, gpu=cfg.CUDA)
+        # self.self_bleu = BLEU('Self-BLEU', gram=3, if_use=cfg.use_self_bleu)
+        # self.clas_acc = ACC(if_use=cfg.use_clas_acc)
+        # self.ppl = PPL(self.train_data, self.test_data,
+        #                n_gram=5, if_use=cfg.use_ppl)
+        # self.all_metrics = [self.bleu, self.nll_gen,
+        #                     self.nll_div, self.self_bleu, self.ppl]
+        self.all_metrics = [self.bleu, self.nll_gen]
 
     def _run(self):
         print('Nothing to run in Basic Instructor!')
@@ -225,9 +226,9 @@ class BasicInstructor:
             self.bleu.reset(test_text=gen_tokens,
                             real_text=self.test_data.tokens)
             self.nll_gen.reset(self.gen, self.train_data.loader)
-            self.nll_div.reset(self.gen, gen_data.loader)
-            self.self_bleu.reset(test_text=gen_tokens_s, real_text=gen_tokens)
-            self.ppl.reset(gen_tokens)
+            # self.nll_div.reset(self.gen, gen_data.loader)
+            # self.self_bleu.reset(test_text=gen_tokens_s, real_text=gen_tokens)
+            # self.ppl.reset(gen_tokens)
 
         if fmt_str:
             return ', '.join(['%s = %s' % (metric.get_name(), metric.get_score()) for metric in self.all_metrics])
@@ -252,10 +253,10 @@ class BasicInstructor:
                             real_text=self.test_data_list[label_i].tokens)
             self.nll_gen.reset(
                 self.gen, self.train_data_list[label_i].loader, label_i)
-            self.nll_div.reset(self.gen, gen_data.loader, label_i)
-            self.self_bleu.reset(test_text=gen_tokens_s, real_text=gen_tokens)
-            self.clas_acc.reset(self.clas, clas_data.loader)
-            self.ppl.reset(gen_tokens)
+            # self.nll_div.reset(self.gen, gen_data.loader, label_i)
+            # self.self_bleu.reset(test_text=gen_tokens_s, real_text=gen_tokens)
+            # self.clas_acc.reset(self.clas, clas_data.loader)
+            # self.ppl.reset(gen_tokens)
 
         return [metric.get_score() for metric in self.all_metrics]
 
