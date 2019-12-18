@@ -52,7 +52,7 @@ vocab_size = [5000, 0, 0, 0]
 temp_adpt = 'exp'
 temperature = [1, 100, 100, 50]
 depname = 'yelp_unk_dep'
-vocab_thres = 3
+vocab_thres = [1, 1, 1, 3]
 dep_vocab_size = 47
 
 # ===Basic Param===
@@ -60,14 +60,14 @@ data_shuffle = int(False)
 model_type = 'vanilla'
 gen_init = 'truncated_normal'
 dis_init = 'uniform'
-samples_num = 5000
+samples_num = 6000
 batch_size = 64
 max_seq_len = 20
 gen_lr = 0.01
 gen_adv_lr = 1e-4
 dis_lr = 1e-4
 pre_log_step = 10
-adv_log_step = 90
+adv_log_step = 20
 
 # ===Generator===
 ADV_g_step = 1
@@ -112,7 +112,7 @@ args = [
     '--temp_adpt', temp_adpt,
     '--temperature', temperature[job_id],
     '--depname', depname,
-    '--vocab_thres', vocab_thres,
+    '--vocab_thres', vocab_thres[job_id],
     '--dep_vocab_size', dep_vocab_size,
 
     # Basic Param
