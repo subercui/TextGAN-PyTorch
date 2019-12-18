@@ -39,29 +39,52 @@ class RGD_D(CNNDiscriminator):
         self.out2logits = nn.Linear(100, 1)
         self.dropout = nn.Dropout(dropout)
 
+        self.emb2one = nn.Linear(self.embed_dim, 1)
+        self.len2one = nn.Linear(int(max_seq_len/2), 1)
+
         self.init_params()
 
-    def forward(self, inp):
+    def forward(self, inp, struct_inp):
         """
         Get logits of discriminator
         :param inp: batch_size * seq_len * vocab_size
         :return logits: [batch_size * num_rep] (1-D tensor)
         """
+        # (64, 1, 80, 64)
         emb = self.embeddings(inp).unsqueeze(
             1)  # batch_size * 1 * max_seq_len * embed_dim
 
+        # 4 entry list, each (64, 300, k=76-79, 64)
         # [batch_size * num_filter * (seq_len-k_h+1) * num_rep]
         cons = [F.relu(conv(emb)) for conv in self.convs]
         pools = [F.max_pool2d(con, (con.size(2), 1)).squeeze(2)
                  for con in cons]  # [batch_size * num_filter * num_rep]
+        # (64, 1200, 64)
         pred = torch.cat(pools, 1)
+        # (4096, 1200)
         # (batch_size * num_rep) * feature_dim
         pred = pred.permute(0, 2, 1).contiguous().view(-1, self.feature_dim)
         highway = self.highway(pred)
+        # (4096, 1200)
         pred = torch.sigmoid(highway) * F.relu(highway) + \
             (1. - torch.sigmoid(highway)) * pred  # highway
 
+        # (4096, 100)
         pred = self.feature2out(self.dropout(pred))
+        # (4096,)
         logits = self.out2logits(pred).squeeze(1)  # [batch_size * num_rep]
+
+        # the strutual input part
+        # share embedding
+        # (64 batch, 40 max_len/2, 64 embed_dim)
+        emb_s = self.embeddings(struct_inp.float())
+        # (64, 40)
+        pred_s = F.relu(self.emb2one(emb_s)).squeeze(2)
+        # (64,)
+        pred_s = self.len2one(self.dropout(pred_s)).squeeze(1)
+        # (4096 ,)
+        pred_s = torch.repeat_interleave(pred_s, 64)
+
+        logits = logits + 0.1 * pred_s
 
         return logits

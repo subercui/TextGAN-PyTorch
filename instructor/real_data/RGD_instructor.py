@@ -105,6 +105,14 @@ class RGDInstructor(BasicInstructor):
                     '>>> Stop by pre signal, skip to adversarial training...')
                 break
 
+    def _wrap_strut(self, samples):
+        with torch.no_grad():
+            struct_t, struct_d = self.read(samples)
+            if cfg.CUDA:
+                struct_t = struct_t.cuda()
+            struct_t = F.one_hot(struct_t, cfg.vocab_size)
+        return struct_t
+
     def adv_train_generator(self, g_step):
         total_loss = 0
         for step in range(g_step):
@@ -114,22 +122,20 @@ class RGDInstructor(BasicInstructor):
             gen_samples = self.gen.sample(
                 cfg.batch_size, cfg.batch_size, one_hot=True)
             # (64, max_len)
-            with torch.no_grad():
-                real_struc_t, real_struc_d = self.read(real_samples)
-                gen_struc_t, gen_struc_d = self.read(gen_samples)
             if cfg.CUDA:
                 real_samples, gen_samples = real_samples.cuda(), gen_samples.cuda()
-                real_struc_t, real_struc_d = real_struc_t.cuda(), real_struc_d.cuda()
-                gen_struc_t, gen_struc_d = gen_struc_t.cuda(), gen_struc_d.cuda()
             real_samples = F.one_hot(real_samples, cfg.vocab_size).float()
-            real_struc_t = F.one_hot(real_struc_t, cfg.vocab_size).float()
-            gen_struc_t = F.one_hot(gen_struc_t, cfg.vocab_size).float()
-            real_struc_d = F.one_hot(real_struc_d, cfg.dep_vocab_size).float()
-            gen_struc_d = F.one_hot(gen_struc_d, cfg.dep_vocab_size).float()
 
             # ===Train===
-            d_out_real = self.dis(real_samples)
-            d_out_fake = self.dis(gen_samples)
+            real_struct_t = self._wrap_strut(real_samples)
+            # real_struct_t = self.gen.embedding(real_struct_t)
+            d_out_real = self.dis(real_samples, real_struct_t)
+            del real_struct_t
+
+            gen_struct_t = self._wrap_strut(gen_samples)
+            # gen_struct_t = self.gen.embedding(gen_struct_t)
+            d_out_fake = self.dis(gen_samples, gen_struct_t)
+            del gen_struct_t
             g_loss, _ = get_losses(d_out_real, d_out_fake, cfg.loss_type)
 
             self.optimize(self.gen_adv_opt, g_loss, self.gen)
@@ -143,22 +149,20 @@ class RGDInstructor(BasicInstructor):
             real_samples = self.train_data.random_batch()['target']
             gen_samples = self.gen.sample(
                 cfg.batch_size, cfg.batch_size, one_hot=True)
-            with torch.no_grad():
-                real_struc_t, real_struc_d = self.read(real_samples)
-                gen_struc_t, gen_struc_d = self.read(gen_samples)
             if cfg.CUDA:
                 real_samples, gen_samples = real_samples.cuda(), gen_samples.cuda()
-                real_struc_t, real_struc_d = real_struc_t.cuda(), real_struc_d.cuda()
-                gen_struc_t, gen_struc_d = gen_struc_t.cuda(), gen_struc_d.cuda()
             real_samples = F.one_hot(real_samples, cfg.vocab_size).float()
-            real_struc_t = F.one_hot(real_struc_t, cfg.vocab_size).float()
-            gen_struc_t = F.one_hot(gen_struc_t, cfg.vocab_size).float()
-            real_struc_d = F.one_hot(real_struc_d, cfg.dep_vocab_size).float()
-            gen_struc_d = F.one_hot(gen_struc_d, cfg.dep_vocab_size).float()
 
             # ===Train===
-            d_out_real = self.dis(real_samples)
-            d_out_fake = self.dis(gen_samples)
+            real_struct_t = self._wrap_strut(real_samples)
+            # real_struct_t = self.gen.embedding(real_struct_t)
+            d_out_real = self.dis(real_samples, real_struct_t)
+            del real_struct_t
+
+            gen_struct_t = self._wrap_strut(gen_samples)
+            # gen_struct_t = self.gen.embedding(gen_struct_t)
+            d_out_fake = self.dis(gen_samples, gen_struct_t)
+            del gen_struct_t
             _, d_loss = get_losses(d_out_real, d_out_fake, cfg.loss_type)
 
             self.optimize(self.dis_opt, d_loss, self.dis)
