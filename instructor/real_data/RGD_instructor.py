@@ -14,20 +14,23 @@ from tqdm import tqdm
 
 import config as cfg
 from instructor.real_data.instructor import BasicInstructor
-from models.RelGAN_D import RelGAN_D
-from models.RelGAN_G import RelGAN_G
+from models.RGD_D import RGD_D
+from models.RGD_G import RGD_G
+from models.RGD_R import RGD_R
 from utils.helpers import get_fixed_temperature, get_losses
 
 
-class RelGANInstructor(BasicInstructor):
+class RGDInstructor(BasicInstructor):
+    # the version 0
     def __init__(self, opt):
-        super(RelGANInstructor, self).__init__(opt)
+        super(RGDInstructor, self).__init__(opt)
 
         # generator, discriminator
-        self.gen = RelGAN_G(cfg.mem_slots, cfg.num_heads, cfg.head_size, cfg.gen_embed_dim, cfg.gen_hidden_dim,
-                            cfg.vocab_size, cfg.max_seq_len, cfg.padding_idx, gpu=cfg.CUDA)
-        self.dis = RelGAN_D(cfg.dis_embed_dim, cfg.max_seq_len, cfg.num_rep, cfg.vocab_size, cfg.padding_idx,
-                            gpu=cfg.CUDA)
+        self.read = RGD_R(if_test_data=cfg.if_test)
+        self.gen = RGD_G(cfg.mem_slots, cfg.num_heads, cfg.head_size, cfg.gen_embed_dim, cfg.gen_hidden_dim,
+                         cfg.vocab_size, cfg.max_seq_len, cfg.padding_idx, gpu=cfg.CUDA)
+        self.dis = RGD_D(cfg.dis_embed_dim, cfg.max_seq_len, cfg.num_rep, cfg.vocab_size, cfg.padding_idx,
+                         gpu=cfg.CUDA)
         self.init_model()
 
         # Optimizer
@@ -105,12 +108,23 @@ class RelGANInstructor(BasicInstructor):
     def adv_train_generator(self, g_step):
         total_loss = 0
         for step in range(g_step):
+            # shape in (64, 37) index vectors
             real_samples = self.train_data.random_batch()['target']
+            # (64, max_len)
+            real_struc_t, real_struc_d = self.read(real_samples)
+            # but gen_samle is shape in (64, 37, 4683)
             gen_samples = self.gen.sample(
                 cfg.batch_size, cfg.batch_size, one_hot=True)
+            gen_stuc_t, gen_stuc_d = self.read(gen_samples)
             if cfg.CUDA:
                 real_samples, gen_samples = real_samples.cuda(), gen_samples.cuda()
+                real_struc_t, real_struc_d = real_struc_t.cuda(), real_struc_d.cuda()
+                gen_stuc_t, gen_stuc_d = gen_stuc_t.cuda(), gen_stuc_d.cuda()
             real_samples = F.one_hot(real_samples, cfg.vocab_size).float()
+            real_struc_t = F.one_hot(real_struc_t, cfg.vocab_size).float()
+            gen_stuc_t = F.one_hot(gen_stuc_t, cfg.vocab_size).float()
+            real_struc_d = F.one_hot(real_struc_d, cfg.dep_vocab_size).float()
+            gen_struc_d = F.one_hot(gen_struc_d, cfg.dep_vocab_size).float()
 
             # ===Train===
             d_out_real = self.dis(real_samples)
@@ -126,11 +140,19 @@ class RelGANInstructor(BasicInstructor):
         total_loss = 0
         for step in range(d_step):
             real_samples = self.train_data.random_batch()['target']
+            real_struc_t, real_struc_d = self.read(real_samples)
             gen_samples = self.gen.sample(
                 cfg.batch_size, cfg.batch_size, one_hot=True)
+            gen_stuc_t, gen_stuc_d = self.read(gen_samples)
             if cfg.CUDA:
                 real_samples, gen_samples = real_samples.cuda(), gen_samples.cuda()
+                real_struc_t, real_struc_d = real_struc_t.cuda(), real_struc_d.cuda()
+                gen_stuc_t, gen_stuc_d = gen_stuc_t.cuda(), gen_stuc_d.cuda()
             real_samples = F.one_hot(real_samples, cfg.vocab_size).float()
+            real_struc_t = F.one_hot(real_struc_t, cfg.vocab_size).float()
+            gen_stuc_t = F.one_hot(gen_stuc_t, cfg.vocab_size).float()
+            real_struc_d = F.one_hot(real_struc_d, cfg.dep_vocab_size).float()
+            gen_struc_d = F.one_hot(gen_struc_d, cfg.dep_vocab_size).float()
 
             # ===Train===
             d_out_real = self.dis(real_samples)

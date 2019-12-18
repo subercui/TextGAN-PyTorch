@@ -31,6 +31,9 @@ dis_init = 'uniform'  # normal, uniform, truncated_normal
 # ===Oracle or Real, type===
 if_real_data = False  # if use real data
 dataset = 'oracle'  # oracle, image_coco, emnlp_news, amazon_app_book, mr15
+depname = 'yelp_unk_dep'  # yelp_dep, yelp_unk_dep
+vocab_thres = 1
+dep_vocab_size = 47
 model_type = 'vanilla'  # vanilla, RMC (custom)
 loss_type = 'rsgan'  # standard, JS, KL, hinge, tv, LS, rsgan (for RelGAN)
 vocab_size = 5000  # oracle: 5000, coco: 6613, emnlp: 5255, amazon_app_book: 6418, mr15: 6289
@@ -112,7 +115,8 @@ log_filename = log_filename + '.txt'
 if torch.cuda.is_available() and torch.cuda.device_count() > 0:
     os.system('nvidia-smi -q -d Utilization > gpu')
     with open('gpu', 'r') as _tmpfile:
-        util_gpu = list(map(int, re.findall(r'Gpu\s+:\s*(\d+)\s*%', _tmpfile.read())))
+        util_gpu = list(
+            map(int, re.findall(r'Gpu\s+:\s*(\d+)\s*%', _tmpfile.read())))
     os.remove('gpu')
     if len(util_gpu):
         device = util_gpu.index(min(util_gpu))
@@ -138,7 +142,8 @@ oracle_samples_path = 'pretrain/oracle_data/oracle_lstm_samples_{}.pt'
 multi_oracle_state_dict_path = 'pretrain/oracle_data/oracle{}_lstm.pt'
 multi_oracle_samples_path = 'pretrain/oracle_data/oracle{}_lstm_samples_{}.pt'
 
-pretrain_root = 'pretrain/{}/'.format(dataset if if_real_data else 'oracle_data')
+pretrain_root = 'pretrain/{}/'.format(
+    dataset if if_real_data else 'oracle_data')
 pretrained_gen_path = pretrain_root + 'gen_MLE_pretrain_{}_{}_sl{}_sn{}.pt'.format(run_model, model_type, max_seq_len,
                                                                                    samples_num)
 pretrained_dis_path = pretrain_root + 'dis_pretrain_{}_{}_sl{}_sn{}.pt'.format(run_model, model_type, max_seq_len,
@@ -161,7 +166,8 @@ def init_param(opt):
         signal_file, tips, save_samples_root, save_model_root, if_real_data, pretrained_gen_path, \
         pretrained_dis_path, pretrain_root, if_test, dataset, PRE_clas_epoch, oracle_samples_path, \
         pretrained_clas_path, gen_init, dis_init, multi_oracle_samples_path, k_label, cat_train_data, cat_test_data, \
-        use_nll_oracle, use_nll_gen, use_nll_div, use_bleu, use_self_bleu, use_clas_acc, use_ppl
+        use_nll_oracle, use_nll_gen, use_nll_div, use_bleu, use_self_bleu, use_clas_acc, use_ppl, \
+        depname, vocab_thres, dep_vocab_size
 
     if_test = True if opt.if_test == 1 else False
     run_model = opt.run_model
@@ -178,6 +184,9 @@ def init_param(opt):
 
     samples_num = opt.samples_num
     vocab_size = opt.vocab_size
+    depname = opt.depname
+    vocab_thres = opt.vocab_thres
+    dep_vocab_size = opt.dep_vocab_size
     MLE_train_epoch = opt.mle_epoch
     PRE_clas_epoch = opt.clas_pre_epoch
     ADV_train_epoch = opt.adv_epoch
@@ -251,7 +260,8 @@ def init_param(opt):
         oracle_samples_path = 'pretrain/oracle_data/oracle_lstm_samples_{}_sl40.pt'
         multi_oracle_samples_path = 'pretrain/oracle_data/oracle{}_lstm_samples_{}_sl40.pt'
 
-    pretrain_root = 'pretrain/{}/'.format(dataset if if_real_data else 'oracle_data')
+    pretrain_root = 'pretrain/{}/'.format(
+        dataset if if_real_data else 'oracle_data')
     pretrained_gen_path = pretrain_root + 'gen_MLE_pretrain_{}_{}_sl{}_sn{}.pt'.format(run_model, model_type,
                                                                                        max_seq_len, samples_num)
     pretrained_dis_path = pretrain_root + 'dis_pretrain_{}_{}_sl{}_sn{}.pt'.format(run_model, model_type, max_seq_len,
@@ -260,7 +270,8 @@ def init_param(opt):
                                                                                      samples_num)
 
     # Assertion
-    assert k_label >= 2, 'Error: k_label = {}, which should be >=2!'.format(k_label)
+    assert k_label >= 2, 'Error: k_label = {}, which should be >=2!'.format(
+        k_label)
 
     # Create Directory
     dir_list = ['save', 'savefig', 'log', 'pretrain', 'dataset',

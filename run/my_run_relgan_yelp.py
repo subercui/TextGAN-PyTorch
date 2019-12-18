@@ -50,7 +50,7 @@ dataset = ['oracle', 'image_coco', 'emnlp_news', 'yelp']
 loss_type = 'rsgan'
 vocab_size = [5000, 0, 0, 0]
 temp_adpt = 'exp'
-temperature = [1, 100, 100, 100]
+temperature = [1, 100, 100, 50]
 
 # ===Basic Param===
 data_shuffle = int(False)

@@ -8,11 +8,14 @@
 # Copyrights (C) 2018. All Rights Reserved.
 
 import nltk
+import spacy
 import numpy as np
 import os
 import torch
 
 import config as cfg
+
+nlp = spacy.load("en_core_web_sm")
 
 
 def get_tokenlized(file):
@@ -22,16 +25,26 @@ def get_tokenlized(file):
         for text in raw:
             # thansfer to a list of words
             text = nltk.word_tokenize(text.lower())
+            # text = [token.text for token in nlp(text)]
             tokenlized.append(text)
     return tokenlized
 
 
-def get_word_list(tokens):
-    """get word set"""
+def get_word_list(tokens, threshold=1):
+    """get word set, only those appear more than threshold times count"""
     word_set = list()
+    word_cnt_dict = dict()
     for sentence in tokens:
         for word in sentence:
-            word_set.append(word)
+            if word in word_cnt_dict:
+                word_cnt_dict[word] += 1
+            else:
+                word_cnt_dict[word] = 1
+            if word_cnt_dict[word] >= threshold:
+                word_set.append(word)
+    if threshold > 1:
+        word_set.append('unk')
+
     return list(set(word_set))
 
 
@@ -53,14 +66,14 @@ def get_dict(word_set):
     return word2idx_dict, idx2word_dict
 
 
-def text_process(train_text_loc, test_text_loc=None):
+def text_process(train_text_loc, test_text_loc=None, thres=1):
     """get sequence length and dict size"""
     train_tokens = get_tokenlized(train_text_loc)
     if test_text_loc is None:
         test_tokens = list()
     else:
         test_tokens = get_tokenlized(test_text_loc)
-    word_set = get_word_list(train_tokens + test_tokens)
+    word_set = get_word_list(train_tokens + test_tokens, threshold=thres)
     word2idx_dict, idx2word_dict = get_dict(word_set)
 
     if test_text_loc is None:
@@ -73,13 +86,13 @@ def text_process(train_text_loc, test_text_loc=None):
 
 
 # ============================================
-def init_dict(dataset):
+def init_dict(dataset, thres=1):
     """
     Initialize dictionaries of dataset, please note that '0': padding_idx, '1': start_letter.
     Finally save dictionary files locally.
     """
     tokens = get_tokenlized('dataset/{}.txt'.format(dataset))
-    word_set = get_word_list(tokens)
+    word_set = get_word_list(tokens, threshold=thres)
     word2idx_dict, idx2word_dict = get_dict(word_set)
 
     with open('dataset/{}_wi_dict.txt'.format(dataset), 'w') as dictout:
@@ -88,6 +101,25 @@ def init_dict(dataset):
         dictout.write(str(idx2word_dict))
 
     print('total tokens: ', len(word2idx_dict))
+
+
+def mask_unk_in_doc(dataset):
+    word2idx_dict, idx2word_dict = load_dict(dataset)
+    tokens = get_tokenlized('dataset/{}.txt'.format(dataset))
+    with open('dataset/{}_unk.txt'.format(dataset), 'w') as f:
+        for sent in tokens:
+            sent_unk = []
+            for word in sent:
+                sent_unk.append(word if word in word2idx_dict else 'unk')
+            f.write(' '.join(sent_unk) + '\n')
+
+    tokens = get_tokenlized('dataset/testdata/{}_test.txt'.format(dataset))
+    with open('dataset/testdata/{}_unk_test.txt'.format(dataset), 'w') as f:
+        for sent in tokens:
+            sent_unk = []
+            for word in sent:
+                sent_unk.append(word if word in word2idx_dict else 'unk')
+            f.write(' '.join(sent_unk) + '\n')
 
 
 def load_dict(dataset):
@@ -107,12 +139,12 @@ def load_dict(dataset):
     return word2idx_dict, idx2word_dict
 
 
-def load_test_dict(dataset):
+def load_test_dict(dataset, thres=1):
     """Build test data dictionary, extend from train data. For the classifier."""
     word2idx_dict, idx2word_dict = load_dict(dataset)  # train dict
     # tokens = get_tokenlized('dataset/testdata/{}_clas_test.txt'.format(dataset))
     tokens = get_tokenlized('dataset/testdata/{}_test.txt'.format(dataset))
-    word_set = get_word_list(tokens)
+    word_set = get_word_list(tokens, threshold=thres)
     index = len(word2idx_dict)  # current index
 
     # extend dict with test data
@@ -125,7 +157,11 @@ def load_test_dict(dataset):
 
 
 def tensor_to_tokens(tensor, dictionary):
-    """transform Tensor to word tokens"""
+    """transform Tensor to word tokens
+    tensor is like a matrix of indexes, (64, 37 length)
+    Returns: 
+        a list of lists of words
+    """
     tokens = []
     for sent in tensor:
         sent_token = []

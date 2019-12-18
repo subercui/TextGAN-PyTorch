@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author       : William
 # @Project      : TextGAN-william
-# @FileName     : run_relgan.py
+# @FileName     : run_RGD.py
 # @Time         : Created at 2019-05-28
 # @Blog         : http://zhiweil.ml/
 # @Description  :
@@ -35,29 +35,32 @@ scriptname = 'main.py'
 
 # ===Program===
 if_test = int(False)
-run_model = 'relgan'
+run_model = 'RGD'
 CUDA = int(True)
 oracle_pretrain = int(True)
 gen_pretrain = int(False)
 dis_pretrain = int(False)
 MLE_train_epoch = 150
 ADV_train_epoch = 3000
-tips = 'RelGAN experiments'
+tips = 'RGD experiments'
 
 # ===Oracle or Real===
 if_real_data = [int(False), int(True), int(True), int(True)]
-dataset = ['oracle', 'image_coco', 'emnlp_news', 'yelp']
+dataset = ['oracle', 'image_coco', 'emnlp_news', 'yelp_unk']
 loss_type = 'rsgan'
 vocab_size = [5000, 0, 0, 0]
 temp_adpt = 'exp'
 temperature = [1, 100, 100, 50]
+depname = 'yelp_unk_dep'
+vocab_thres = 3
+dep_vocab_size = 47
 
 # ===Basic Param===
 data_shuffle = int(False)
 model_type = 'vanilla'
 gen_init = 'truncated_normal'
 dis_init = 'uniform'
-samples_num = 10000
+samples_num = 5000
 batch_size = 64
 max_seq_len = 20
 gen_lr = 0.01
@@ -108,6 +111,9 @@ args = [
     '--vocab_size', vocab_size[job_id],
     '--temp_adpt', temp_adpt,
     '--temperature', temperature[job_id],
+    '--depname', depname,
+    '--vocab_thres', vocab_thres,
+    '--dep_vocab_size', dep_vocab_size,
 
     # Basic Param
     '--shuffle', data_shuffle,

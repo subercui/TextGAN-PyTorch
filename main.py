@@ -32,6 +32,10 @@ def program_config(parser):
     # Basic Train
     parser.add_argument('--samples_num', default=cfg.samples_num, type=int)
     parser.add_argument('--vocab_size', default=cfg.vocab_size, type=int)
+    parser.add_argument('--depname', default=cfg.depname, type=str)
+    parser.add_argument('--vocab_thres', default=cfg.vocab_thres, type=int)
+    parser.add_argument('--dep_vocab_size',
+                        default=cfg.dep_vocab_size, type=int)
     parser.add_argument('--mle_epoch', default=cfg.MLE_train_epoch, type=int)
     parser.add_argument('--clas_pre_epoch',
                         default=cfg.PRE_clas_epoch, type=int)
@@ -106,7 +110,7 @@ if __name__ == '__main__':
 
     if opt.if_real_data:
         opt.max_seq_len, opt.vocab_size = text_process(
-            'dataset/' + opt.dataset + '.txt')
+            'dataset/' + opt.dataset + '.txt', thres=opt.vocab_thres)
         cfg.extend_vocab_size = len(load_test_dict(opt.dataset)[
                                     0])  # init classifier vocab_size
     cfg.init_param(opt)
@@ -120,6 +124,7 @@ if __name__ == '__main__':
         from instructor.real_data.jsdgan_instructor import JSDGANInstructor
         from instructor.real_data.relgan_instructor import RelGANInstructor
         from instructor.real_data.sentigan_instructor import SentiGANInstructor
+        from instructor.real_data.RGD_instructor import RGDInstructor
 
     else:
         from instructor.oracle_data.seqgan_instructor import SeqGANInstructor
@@ -136,6 +141,7 @@ if __name__ == '__main__':
         'jsdgan': JSDGANInstructor,
         'relgan': RelGANInstructor,
         'sentigan': SentiGANInstructor,
+        'RGD': RGDInstructor
     }
 
     inst = instruction_dict[cfg.run_model](opt)

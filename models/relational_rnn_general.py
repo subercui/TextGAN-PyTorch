@@ -54,7 +54,8 @@ class RelationalMemory(nn.Module):
         self.mem_slots_plus_input = self.mem_slots + 1
 
         if num_blocks < 1:
-            raise ValueError('num_blocks must be >=1. Got: {}.'.format(num_blocks))
+            raise ValueError(
+                'num_blocks must be >=1. Got: {}.'.format(num_blocks))
         self.num_blocks = num_blocks
 
         if gate_style not in ['unit', 'memory', None]:
@@ -81,12 +82,16 @@ class RelationalMemory(nn.Module):
         # just using one big param is more efficient, rather than this line
         # self.qkv_projector = [nn.Parameter(torch.randn((self.qkv_size, self.qkv_size))) for _ in range(self.num_heads)]
         self.qkv_projector = nn.Linear(self.mem_size, self.total_qkv_size)
-        self.qkv_layernorm = nn.LayerNorm([self.mem_slots_plus_input, self.total_qkv_size])
+        self.qkv_layernorm = nn.LayerNorm(
+            [self.mem_slots_plus_input, self.total_qkv_size])
 
         # used for attend_over_memory function
-        self.attention_mlp = nn.ModuleList([nn.Linear(self.mem_size, self.mem_size)] * self.attention_mlp_layers)
-        self.attended_memory_layernorm = nn.LayerNorm([self.mem_slots_plus_input, self.mem_size])
-        self.attended_memory_layernorm2 = nn.LayerNorm([self.mem_slots_plus_input, self.mem_size])
+        self.attention_mlp = nn.ModuleList(
+            [nn.Linear(self.mem_size, self.mem_size)] * self.attention_mlp_layers)
+        self.attended_memory_layernorm = nn.LayerNorm(
+            [self.mem_slots_plus_input, self.mem_size])
+        self.attended_memory_layernorm2 = nn.LayerNorm(
+            [self.mem_slots_plus_input, self.mem_size])
 
         ########## parameters for initial embedded input projection ##########
         self.input_size = input_size
@@ -97,8 +102,10 @@ class RelationalMemory(nn.Module):
         self.input_gate_projector = nn.Linear(self.mem_size, self.num_gates)
         self.memory_gate_projector = nn.Linear(self.mem_size, self.num_gates)
         # trainable scalar gate bias tensors
-        self.forget_bias = nn.Parameter(torch.tensor(forget_bias, dtype=torch.float32))
-        self.input_bias = nn.Parameter(torch.tensor(input_bias, dtype=torch.float32))
+        self.forget_bias = nn.Parameter(
+            torch.tensor(forget_bias, dtype=torch.float32))
+        self.input_bias = nn.Parameter(
+            torch.tensor(input_bias, dtype=torch.float32))
 
         ########## number of outputs returned #####
         self.return_all_outputs = return_all_outputs
@@ -125,7 +132,8 @@ class RelationalMemory(nn.Module):
           init_state: A truncated or padded matrix of size
             (batch_size, self.mem_slots, self.mem_size).
         """
-        init_state = torch.stack([torch.eye(self.mem_slots) for _ in range(batch_size)])
+        init_state = torch.stack([torch.eye(self.mem_slots)
+                                  for _ in range(batch_size)])
 
         # pad the matrix with zeros
         if self.mem_size > self.mem_slots:
@@ -162,13 +170,15 @@ class RelationalMemory(nn.Module):
 
         # split the qkv to multiple heads H
         # [B, N, F] => [B, N, H, F/H]
-        qkv_reshape = qkv.view(qkv.shape[0], mem_slots, self.num_heads, self.qkv_size)
+        qkv_reshape = qkv.view(
+            qkv.shape[0], mem_slots, self.num_heads, self.qkv_size)
 
         # [B, N, H, F/H] => [B, H, N, F/H]
         qkv_transpose = qkv_reshape.permute(0, 2, 1, 3)
 
         # [B, H, N, key_size], [B, H, N, key_size], [B, H, N, value_size]
-        q, k, v = torch.split(qkv_transpose, [self.key_size, self.key_size, self.value_size], -1)
+        q, k, v = torch.split(
+            qkv_transpose, [self.key_size, self.key_size, self.value_size], -1)
 
         # scale q with d_k, the dimensionality of the key vectors
         q *= (self.key_size ** -0.5)
@@ -182,9 +192,14 @@ class RelationalMemory(nn.Module):
 
         # [B, H, N, V] => [B, N, H, V] => [B, N, H*V]
         output_transpose = output.permute(0, 2, 1, 3).contiguous()
-        new_memory = output_transpose.view((output_transpose.shape[0], output_transpose.shape[1], -1))
+        new_memory = output_transpose.view(
+            (output_transpose.shape[0], output_transpose.shape[1], -1))
 
         return new_memory
+
+    def structural_memory(self, ):
+        # add implementation here
+        return s_memory
 
     @property
     def state_size(self):
@@ -239,11 +254,13 @@ class RelationalMemory(nn.Module):
             gate_inputs = gate_inputs.unsqueeze(dim=1)
             gate_memory = self.memory_gate_projector(memory)
         else:
-            raise ValueError("input shape of create_gate function is 2, expects 3")
+            raise ValueError(
+                "input shape of create_gate function is 2, expects 3")
 
         # this completes the equation 4 and 5
         gates = gate_memory + gate_inputs
-        gates = torch.split(gates, split_size_or_sections=int(gates.shape[2] / 2), dim=2)
+        gates = torch.split(gates, split_size_or_sections=int(
+            gates.shape[2] / 2), dim=2)
         input_gate, forget_gate = gates
         assert input_gate.shape[2] == forget_gate.shape[2]
 

@@ -15,10 +15,10 @@ from models.generator import LSTMGenerator
 from models.relational_rnn_general import RelationalMemory
 
 
-class RelGAN_G(LSTMGenerator):
+class RGD_G(LSTMGenerator):
     def __init__(self, mem_slots, num_heads, head_size, embedding_dim, hidden_dim, vocab_size, max_seq_len, padding_idx,
                  gpu=False):
-        super(RelGAN_G, self).__init__(embedding_dim, hidden_dim, vocab_size, max_seq_len, padding_idx, gpu)
+        super(RGD_G, self).__init__(embedding_dim, hidden_dim, vocab_size, max_seq_len, padding_idx, gpu)
         self.name = 'relgan'
 
         self.temperature = 1.0  # init value is 1.0
