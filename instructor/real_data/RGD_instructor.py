@@ -28,7 +28,7 @@ class RGDInstructor(BasicInstructor):
         # generator, discriminator
         self.read = RGD_R(if_test_data=cfg.if_test)
         self.gen = RGD_G(cfg.mem_slots, cfg.num_heads, cfg.head_size, cfg.gen_embed_dim, cfg.gen_hidden_dim,
-                         cfg.vocab_size, cfg.max_seq_len, cfg.padding_idx, gpu=cfg.CUDA)
+                         cfg.vocab_size, cfg.max_seq_len, cfg.padding_idx, gpu=cfg.CUDA, R_module=self.read)
         self.dis = RGD_D(cfg.dis_embed_dim, cfg.max_seq_len, cfg.num_rep, cfg.vocab_size, cfg.padding_idx,
                          gpu=cfg.CUDA)
         self.init_model()

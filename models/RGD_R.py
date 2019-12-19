@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import spacy
 import config as cfg
 
-from utils.text_process import *
+from utils.text_process import tensor_to_tokens, load_dict, load_test_dict
 
 
 class RGD_R(object):

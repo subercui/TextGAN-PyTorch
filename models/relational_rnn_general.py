@@ -51,7 +51,7 @@ class RelationalMemory(nn.Module):
         # a new fixed params needed for pytorch port of RMC
         # +1 is the concatenated input per time step : we do self-attention with the concatenated memory & input
         # so if the mem_slots = 1, this value is 2
-        self.mem_slots_plus_input = self.mem_slots + 1
+        self.mem_slots_plus_input = self.mem_slots + 2
 
         if num_blocks < 1:
             raise ValueError(
@@ -152,6 +152,7 @@ class RelationalMemory(nn.Module):
         Perform multi-head attention from 'Attention is All You Need'.
         Implementation of the attention mechanism from
         https://arxiv.org/abs/1706.03762.
+        And they are doing this on memory slots.
         Args:
           memory: Memory tensor to perform attention on.
         Returns:
@@ -161,6 +162,7 @@ class RelationalMemory(nn.Module):
         # First, a simple linear projection is used to construct queries
         qkv = self.qkv_projector(memory)
         # apply layernorm for every dim except the batch dim
+        # (64, 1+1, 1536)
         qkv = self.qkv_layernorm(qkv)
 
         # mem_slots needs to be dynamically computed since mem_slots got concatenated with inputs
@@ -170,13 +172,16 @@ class RelationalMemory(nn.Module):
 
         # split the qkv to multiple heads H
         # [B, N, F] => [B, N, H, F/H]
+        # (64, 1+1, 2, 768)
         qkv_reshape = qkv.view(
             qkv.shape[0], mem_slots, self.num_heads, self.qkv_size)
 
         # [B, N, H, F/H] => [B, H, N, F/H]
+        # (64, 2, 1+1, 768)
         qkv_transpose = qkv_reshape.permute(0, 2, 1, 3)
 
         # [B, H, N, key_size], [B, H, N, key_size], [B, H, N, value_size]
+        # all (64, 2, 1+1, 256)
         q, k, v = torch.split(
             qkv_transpose, [self.key_size, self.key_size, self.value_size], -1)
 
@@ -184,14 +189,18 @@ class RelationalMemory(nn.Module):
         q *= (self.key_size ** -0.5)
 
         # make it [B, H, N, N]
+        # (64, 2, 1+1, 1+1)
         dot_product = torch.matmul(q, k.permute(0, 1, 3, 2))
         weights = F.softmax(dot_product, dim=-1)
 
         # output is [B, H, N, V]
+        # (64, 2, 1+1, 256)
         output = torch.matmul(weights, v)
 
         # [B, H, N, V] => [B, N, H, V] => [B, N, H*V]
+        # (64, 1+1, 2, 256)
         output_transpose = output.permute(0, 2, 1, 3).contiguous()
+        # (64, 1+1, 512)
         new_memory = output_transpose.view(
             (output_transpose.shape[0], output_transpose.shape[1], -1))
 
@@ -274,7 +283,7 @@ class RelationalMemory(nn.Module):
         """
         Perform multiheaded attention over `memory`.
             Args:
-              memory: Current relational memory.
+              memory: Current relational memory. (64, 2, 512)
             Returns:
               The attended-over memory.
         """
@@ -293,12 +302,13 @@ class RelationalMemory(nn.Module):
 
         return memory
 
-    def forward_step(self, inputs, memory, treat_input_as_matrix=False):
+    def forward_step(self, inputs, memory, struct_inp, treat_input_as_matrix=False):
         """
         Forward step of the relational memory core.
         Args:
-          inputs: Tensor input.
-          memory: Memory output from the previous time step.
+          inputs: Tensor input. (64, 32)
+          memory: Memory output from the previous time step. (64, 1, 512)
+          struct_inp: like (64, 1, 512)
           treat_input_as_matrix: Optional, whether to treat `input` as a sequence
             of matrices. Default to False, in which case the input is flattened
             into a vector.
@@ -314,21 +324,30 @@ class RelationalMemory(nn.Module):
             inputs_reshape = self.input_projector(inputs)
         else:
             # keep (Batch, ...) dim (0), flatten starting from dim 1
+            # (64, 32)
             inputs = inputs.view(inputs.shape[0], -1)
             # apply linear layer for dim 1
+            # (64, 512)
             inputs = self.input_projector(inputs)
             # unsqueeze the time step to dim 1
+            # (64, 1, 512) match the memory shape
             inputs_reshape = inputs.unsqueeze(dim=1)
 
-        memory_plus_input = torch.cat([memory, inputs_reshape], dim=1)
+        # (64, k+2, 512)
+        memory_plus_input = torch.cat(
+            [memory, inputs_reshape, struct_inp], dim=1)
+        # (64, k+2, 512)
         next_memory = self.attend_over_memory(memory_plus_input)
 
         # cut out the concatenated input vectors from the original memory slots
         n = inputs_reshape.shape[1]
-        next_memory = next_memory[:, :-n, :]
+        n_s = struct_inp.shape[1]
+        # (64, 1, 512)
+        next_memory = next_memory[:, :-(n+n_s), :]
 
         if self.gate_style == 'unit' or self.gate_style == 'memory':
             # these gates are sigmoid-applied ones for equation 7
+            # both gates (64, 1, 512)
             input_gate, forget_gate = self.create_gates(inputs_reshape, memory)
             # equation 7 calculation
             next_memory = input_gate * torch.tanh(next_memory)
@@ -338,7 +357,7 @@ class RelationalMemory(nn.Module):
 
         return output, next_memory
 
-    def forward(self, inputs, memory, treat_input_as_matrix=False):
+    def forward(self, inputs, memory, struct_inp, treat_input_as_matrix=False):
         # Starting each batch, we detach the hidden state from how it was previously produced.
         # If we didn't, the model would try backpropagating all the way to start of the dataset.
 
@@ -352,9 +371,18 @@ class RelationalMemory(nn.Module):
         logit = 0
         logits = []
         # shape[1] is seq_lenth T
-        for idx_step in range(inputs.shape[1]):
-            logit, memory = self.forward_step(inputs[:, idx_step], memory)
-            logits.append(logit.unsqueeze(1))
+        assert inputs.shape[1] == struct_inp.shape[1]
+        if inputs.shape[1] <= 1:
+            for idx_step in range(inputs.shape[1]):
+                logit, memory = self.forward_step(
+                    inputs[:, idx_step], memory, struct_inp)
+                logits.append(logit.unsqueeze(1))
+        else:
+            for idx_step in range(inputs.shape[1]):
+                logit, memory = self.forward_step(
+                    inputs[:, idx_step], memory, struct_inp[:, idx_step:idx_step+1, :])
+                logits.append(logit.unsqueeze(1))
+
         logits = torch.cat(logits, dim=1)
 
         if self.return_all_outputs:

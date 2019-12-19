@@ -36,6 +36,7 @@ def program_config(parser):
     parser.add_argument('--vocab_thres', default=cfg.vocab_thres, type=int)
     parser.add_argument('--dep_vocab_size',
                         default=cfg.dep_vocab_size, type=int)
+    parser.add_argument('--read_interval', default=cfg.read_interval, type=int)
     parser.add_argument('--mle_epoch', default=cfg.MLE_train_epoch, type=int)
     parser.add_argument('--clas_pre_epoch',
                         default=cfg.PRE_clas_epoch, type=int)

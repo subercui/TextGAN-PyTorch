@@ -34,6 +34,7 @@ dataset = 'oracle'  # oracle, image_coco, emnlp_news, amazon_app_book, mr15
 depname = 'yelp_unk_dep'  # yelp_dep, yelp_unk_dep
 vocab_thres = 1
 dep_vocab_size = 47
+read_interval = 20
 model_type = 'vanilla'  # vanilla, RMC (custom)
 loss_type = 'rsgan'  # standard, JS, KL, hinge, tv, LS, rsgan (for RelGAN)
 vocab_size = 5000  # oracle: 5000, coco: 6613, emnlp: 5255, amazon_app_book: 6418, mr15: 6289
@@ -167,7 +168,7 @@ def init_param(opt):
         pretrained_dis_path, pretrain_root, if_test, dataset, PRE_clas_epoch, oracle_samples_path, \
         pretrained_clas_path, gen_init, dis_init, multi_oracle_samples_path, k_label, cat_train_data, cat_test_data, \
         use_nll_oracle, use_nll_gen, use_nll_div, use_bleu, use_self_bleu, use_clas_acc, use_ppl, \
-        depname, vocab_thres, dep_vocab_size
+        depname, vocab_thres, dep_vocab_size, read_interval
 
     if_test = True if opt.if_test == 1 else False
     run_model = opt.run_model
@@ -187,6 +188,7 @@ def init_param(opt):
     depname = opt.depname
     vocab_thres = opt.vocab_thres
     dep_vocab_size = opt.dep_vocab_size
+    read_interval = opt.read_interval
     MLE_train_epoch = opt.mle_epoch
     PRE_clas_epoch = opt.clas_pre_epoch
     ADV_train_epoch = opt.adv_epoch
