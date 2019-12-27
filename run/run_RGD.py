@@ -40,27 +40,28 @@ CUDA = int(True)
 oracle_pretrain = int(True)
 gen_pretrain = int(False)
 dis_pretrain = int(False)
-MLE_train_epoch = [150, 150, 150, 60]  # 150
+MLE_train_epoch = [150, 90, 150, 60, 60]  # 150
 ADV_train_epoch = 3000
 tips = 'RGD experiments'
 
 # ===Oracle or Real===
-if_real_data = [int(False), int(True), int(True), int(True)]
-dataset = ['oracle', 'image_coco', 'emnlp_news', 'yelp_unk']
+if_real_data = [int(False), int(True), int(True), int(True), int(True)]
+dataset = ['oracle', 'image_coco', 'emnlp_news', 'yelp_unk', 'yelp20k']
 loss_type = 'rsgan'
-vocab_size = [5000, 0, 0, 0]
+vocab_size = [5000, 0, 0, 0, 0]
 temp_adpt = 'exp'
-temperature = [1, 100, 100, 50]
+temperature = [1, 50, 100, 50, 50]
 depname = 'yelp_unk_dep'
-vocab_thres = [1, 1, 1, 3]
+vocab_thres = [1, 1, 1, 3, 3]
 dep_vocab_size = 47
+# read_interval = 20
 
 # ===Basic Param===
 data_shuffle = int(False)
 model_type = 'vanilla'
 gen_init = 'truncated_normal'
 dis_init = 'uniform'
-samples_num = 6000
+samples_num = 4500
 batch_size = 64
 max_seq_len = 20
 gen_lr = 0.01
@@ -73,7 +74,7 @@ adv_log_step = 50
 ADV_g_step = 1
 gen_embed_dim = 32
 gen_hidden_dim = 32
-mem_slots = 1
+mem_slots = 1  # or 4
 num_heads = 2
 head_size = 256
 
@@ -114,6 +115,7 @@ args = [
     '--depname', depname,
     '--vocab_thres', vocab_thres[job_id],
     '--dep_vocab_size', dep_vocab_size,
+    # '--read_interval', read_interval,
 
     # Basic Param
     '--shuffle', data_shuffle,

@@ -9,13 +9,27 @@
 
 import nltk
 import spacy
+from spacy.tokenizer import Tokenizer
+import re
 import numpy as np
 import os
 import torch
 
 import config as cfg
 
+prefix_re = re.compile(r'''^[?.,![("'0-9]''')
+suffix_re = re.compile(r'''[])"'0-9?.,!]$''')
+infix_re = re.compile(r'''[-~!?$,()./0-9]''')
+
+
+def custom_tokenizer(nlp):
+    return Tokenizer(nlp.vocab, prefix_search=prefix_re.search,
+                     suffix_search=suffix_re.search,
+                     infix_finditer=infix_re.finditer)
+
+
 nlp = spacy.load("en_core_web_sm")
+nlp.tokenizer = custom_tokenizer(nlp)
 
 
 def get_tokenlized(file):
@@ -24,8 +38,8 @@ def get_tokenlized(file):
     with open(file) as raw:
         for text in raw:
             # thansfer to a list of words
-            text = nltk.word_tokenize(text.lower())
-            # text = [token.text for token in nlp(text)]
+            # text = nltk.word_tokenize(text.lower())
+            text = [token.text for token in nlp.tokenizer(text.lower())]
             tokenlized.append(text)
     return tokenlized
 
@@ -111,7 +125,7 @@ def mask_unk_in_doc(dataset):
             sent_unk = []
             for word in sent:
                 sent_unk.append(word if word in word2idx_dict else 'unk')
-            f.write(' '.join(sent_unk) + '\n')
+            f.write(' '.join(sent_unk))
 
     tokens = get_tokenlized('dataset/testdata/{}_test.txt'.format(dataset))
     with open('dataset/testdata/{}_unk_test.txt'.format(dataset), 'w') as f:
@@ -119,7 +133,7 @@ def mask_unk_in_doc(dataset):
             sent_unk = []
             for word in sent:
                 sent_unk.append(word if word in word2idx_dict else 'unk')
-            f.write(' '.join(sent_unk) + '\n')
+            f.write(' '.join(sent_unk))
 
 
 def load_dict(dataset):
@@ -182,7 +196,8 @@ def tokens_to_tensor(tokens, dictionary):
         for i, word in enumerate(sent):
             if word == cfg.padding_token:
                 break
-            sent_ten.append(int(dictionary[str(word)]))
+            sent_ten.append(int(dictionary[str(word)]) if str(
+                word) in dictionary else int(dictionary['unk']))
         while i < cfg.max_seq_len - 1:
             sent_ten.append(cfg.padding_idx)
             i += 1
