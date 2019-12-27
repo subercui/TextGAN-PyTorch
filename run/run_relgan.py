@@ -4,13 +4,14 @@
 # @FileName     : run_relgan.py
 # @Time         : Created at 2019-05-28
 # @Blog         : http://zhiweil.ml/
-# @Description  : 
+# @Description  :
 # Copyrights (C) 2018. All Rights Reserved.
 
 import sys
 from subprocess import call
 
 import os
+from os.path import dirname
 
 # Job id and gpu_id
 if len(sys.argv) > 2:
@@ -24,11 +25,12 @@ elif len(sys.argv) > 1:
 else:
     job_id = 0
     gpu_id = 0
-    print('Missing argument: job_id and gpu_id. Use default job_id: {}, gpu_id: {}'.format(job_id, gpu_id))
+    print('Missing argument: job_id and gpu_id. Use default job_id: {}, gpu_id: {}'.format(
+        job_id, gpu_id))
 
 # Executables
 executable = 'python'  # specify your own python interpreter path here
-rootdir = '../'
+rootdir = dirname(dirname(os.path.abspath(__file__)))
 scriptname = 'main.py'
 
 # ===Program===
@@ -38,37 +40,41 @@ CUDA = int(True)
 oracle_pretrain = int(True)
 gen_pretrain = int(False)
 dis_pretrain = int(False)
-MLE_train_epoch = 150
+MLE_train_epoch = [150, 90, 150, 60, 60]  # 150
 ADV_train_epoch = 3000
 tips = 'RelGAN experiments'
 
 # ===Oracle or Real===
-if_real_data = [int(False), int(True), int(True)]
-dataset = ['oracle', 'image_coco', 'emnlp_news']
+if_real_data = [int(False), int(True), int(True), int(True), int(True)]
+dataset = ['oracle', 'image_coco', 'emnlp_news', 'yelp_unk', 'yelp20k']
 loss_type = 'rsgan'
-vocab_size = [5000, 0, 0]
+vocab_size = [5000, 0, 0, 0, 0]
 temp_adpt = 'exp'
-temperature = [1, 100, 100]
+temperature = [1, 50, 100, 50, 50]
+depname = 'yelp_unk_dep'
+vocab_thres = [1, 1, 1, 3, 3]
+dep_vocab_size = 47
+read_interval = 20
 
 # ===Basic Param===
 data_shuffle = int(False)
 model_type = 'vanilla'
 gen_init = 'truncated_normal'
 dis_init = 'uniform'
-samples_num = 10000
+samples_num = 4500
 batch_size = 64
 max_seq_len = 20
 gen_lr = 0.01
 gen_adv_lr = 1e-4
 dis_lr = 1e-4
 pre_log_step = 10
-adv_log_step = 20
+adv_log_step = 50
 
 # ===Generator===
 ADV_g_step = 1
 gen_embed_dim = 32
 gen_hidden_dim = 32
-mem_slots = 1
+mem_slots = 1  # or 4
 num_heads = 2
 head_size = 256
 
@@ -91,11 +97,11 @@ args = [
     '--if_test', if_test,
     '--run_model', run_model,
     '--cuda', CUDA,
-    # '--device', gpu_id,   # comment for auto GPU
+    '--device', gpu_id,   # comment for auto GPU
     '--ora_pretrain', oracle_pretrain,
     '--gen_pretrain', gen_pretrain,
     '--dis_pretrain', dis_pretrain,
-    '--mle_epoch', MLE_train_epoch,
+    '--mle_epoch', MLE_train_epoch[job_id],
     '--adv_epoch', ADV_train_epoch,
     '--tips', tips,
 
@@ -106,6 +112,10 @@ args = [
     '--vocab_size', vocab_size[job_id],
     '--temp_adpt', temp_adpt,
     '--temperature', temperature[job_id],
+    '--depname', depname,
+    '--vocab_thres', vocab_thres[job_id],
+    '--dep_vocab_size', dep_vocab_size,
+    '--read_interval', read_interval,
 
     # Basic Param
     '--shuffle', data_shuffle,

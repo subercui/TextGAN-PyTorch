@@ -6,6 +6,8 @@ save/
 savefig/
 .idea/
 .vscode/
+spacy_test.py
+*samples*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
